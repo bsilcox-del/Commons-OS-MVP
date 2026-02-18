@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Commons OS — Work Design Studio</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden;background:#F7F6F3}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#D1D0CC;border-radius:3px}
+button,input,textarea,select{font-family:inherit}
+textarea{resize:vertical}
+::placeholder{color:#9CA3AF}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+var h=React.createElement,useState=React.useState,useEffect=React.useEffect,useRef=React.useRef;
+
+/* Colour Tokens */
+var C={
+  bg:"#F7F6F3",surface:"#FFFFFF",border:"#E8E6E1",borderLight:"#F0EEEA",
+  navy:"#1B2038",navyLight:"#252A45",accent:"#D4A853",accentLight:"#F5EDD8",accentDark:"#B8922E",
+  teal:"#2A9D8F",tealLight:"#E6F5F3",coral:"#E76F51",coralLight:"#FDF0EC",
+  indigo:"#6366F1",indigoLight:"#EEF0FE",purple:"#8B5CF6",purpleLight:"#F3EEFE",
+  text:"#1A1A1A",textSec:"#6B7280",textMut:"#9CA3AF",
+  green:"#059669",greenLight:"#ECFDF5",amber:"#D97706",amberLight:"#FFFBEB",
+  red:"#DC2626",redLight:"#FEF2F2"
+};
+
+/* SVG Icon helper */
+function Ic(props){
+  var paths=props.paths,sz=props.size||18,color=props.color||"#6B7280",st=props.style||{};
+  var arr=Array.isArray(paths)?paths:[paths];
+  return h("svg",{width:sz,height:sz,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:"2",strokeLinecap:"round",strokeLinejoin:"round",style:Object.assign({flexShrink:0},st)},
+    arr.map(function(d,i){return h("path",{key:i,d:d})})
+  );
+}
+var ico={
+  target:function(s,c,st){return h(Ic,{size:s,color:c,style:st,paths:["M22 12A10 10 0 1 1 12 2a10 10 0 0 1 10 10Z","M18 12A6 6 0 1 1 12 6a6 6 0 0 1 6 6Z","M14 12A2 2 0 1 1 12 10a2 2 0 0 1 2 2Z"]})},
+  users:function(s,c,st){return h(Ic,{size:s,color:c,style:st,paths:["M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2","M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z","M23 21v-2a4 4 0 0 0-3-3.87","M16 3.13a4 4 0 0 1 0 7.75"]})},
+  check:function(s,c,st){return h(Ic,{size:s,color:c,style:st,paths:["M22 11.08V12a10 10 0 1 1-5.93-9.14","M22 4 12 14.01l-3-3"]})},
+  search:function(s,c,st){return h(Ic,{size:s,color:c,style:st,paths:["M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z","M21 21l-4.35-4.35"]})},
+  boxes:function(s,c,st){return h(Ic,{size:s,color:c,style:st,paths:["M12 2 2 7l10 5 10-5-10-5Z","M2 17l10 5 10-5","M2 12l10 5 10-5"]})},
+  calendar:function(s,c,st){return h(Ic,{size:s,color:c,style:st,paths:["M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5","M16 2v4","M8 2v4","M3 10h5","M22 16a6 6 0 1 1-12 0 6 6 0 0 1 12 0Z"]})},
+  sparkles:function(s,c,st){return h(Ic,{size:s,color:c,style:st,paths:["M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z","M20 3v4","M22 5h-4"]})},
+  arrowR:function(s,c,st){return h(Ic,{size:s,color:c,style:st,paths:["M5 12h14","M12 5l7 7-7 7"]})},
+  arrowL:function(s,c,st){return h(Ic,{size:s,color:c,style:st,paths:["M19 12H5","M12 19l-7-7 7-7"]})},
+  plus:function(s,c,st){return h(Ic,{size:s,color:c,style:st,paths:["M12 5v14","M5 12h14"]})},
+  lightbulb:function(s,c,st){return h(Ic,{size:s,color:c,style:st,paths:["M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5","M9 18h6","M10 22h4"]})},
+  bot:function(s,c,st){return h(Ic,{size:s,color:c,style:st,paths:["M12 8V4H8","M20 8H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2Z","M9 13v2","M15 13v2"]})},
+  layers:function(s,c,st){return h(Ic,{size:s,color:c,style:st,paths:["M12 2 2 7l10 5 10-5-10-5Z","M2 17l10 5 10-5","M2 12l10 5 10-5"]})},
+  compass:function(s,c,st){return h(Ic,{size:s,color:c,style:st,paths:["M22 12A10 10 0 1 1 2 12a10 10 0 0 1 20 0Z","M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12Z"]})},
+  chevD:function(s,c,st){return h(Ic,{size:s,color:c,style:st,paths:"M6 9l6 6 6-6"})},
+  chevU:function(s,c,st){return h(Ic,{size:s,color:c,style:st,paths:"M18 15l-6-6-6 6"})}
+};
+
+/* Step Definitions */
+var STEPS=[
+  {id:1,key:"endstate",title:"Desired End State",subtitle:"Start at the end",icon:"target",color:C.accent,principle:"Valuable Futures",principleDesc:"Create revelations that reshape ambition",question:"What needs to be true when the work is done?"},
+  {id:2,key:"context",title:"Client Context",subtitle:"Anchored in their reality",icon:"compass",color:C.teal,principle:"Anchored in Their Reality",principleDesc:"Fit the client's rhythm, not ours",question:"Who are we designing this work for, and how do they operate?"},
+  {id:3,key:"conditions",title:"Conditions of Success",subtitle:"Definition of good",icon:"check",color:C.green,principle:"Do, Inspire, Lead",principleDesc:"Earn authority through action",question:"What conditions must the work create, and how will we know?"},
+  {id:4,key:"inquiry",title:"Lines of Inquiry",subtitle:"Hypothesis-driven analysis",icon:"search",color:C.indigo,principle:"Momentum Creates Focus",principleDesc:"Prioritise progress; cut the swirl",question:"What do we believe, and what must we prove?"},
+  {id:5,key:"patterns",title:"Pattern Design",subtitle:"Work packages",icon:"boxes",color:C.purple,principle:"A Shared Endeavour",principleDesc:"Align early, build together",question:"How does the work get structured and done?"},
+  {id:6,key:"allocation",title:"Allocation & Sequencing",subtitle:"Capacity-aware planning",icon:"calendar",color:C.coral,principle:"In Their Corner",principleDesc:"Remove friction; be the ally",question:"Who does what, when, and can they?"}
+];
+
+/* Squad Data */
+var SQUAD=[
+  {i:"SC",name:"Sarah Chen",role:"Strategy Partner",cap:78,alloc:41,color:C.indigo,skills:["Strategic Planning","Client Management","Commercial Modelling"]},
+  {i:"JO",name:"James Okafor",role:"Strategy Associate",cap:85,alloc:52,color:C.teal,skills:["Data Analysis","Market Research","Pattern Delivery"]},
+  {i:"MP",name:"Maya Patel",role:"Strategy Associate",cap:85,alloc:35,color:C.purple,skills:["Customer Research","Synthesis","Narrative Design"]},
+  {i:"TA",name:"Tom Aldridge",role:"Strategy Associate",cap:85,alloc:48,color:C.coral,skills:["Commercial Analysis","Financial Modelling","Reporting"]}
+];
+
+/* Utility Components */
+function Badge(props){
+  var color=props.color||C.navy,bg=props.bg||C.borderLight,st=props.style||{};
+  return h("span",{style:Object.assign({background:bg,color:color,fontSize:11,fontWeight:600,padding:"2px 8px",borderRadius:999,letterSpacing:0.3,whiteSpace:"nowrap"},st)},props.children);
+}
+function Avatar(props){
+  var color=props.color||C.indigo,size=props.size||32;
+  return h("div",{style:{width:size,height:size,borderRadius:"50%",background:color+"18",color:color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*0.38,fontWeight:700,flexShrink:0}},props.initials);
+}
+function Card(props){
+  return h("div",{style:Object.assign({background:C.surface,border:"1px solid "+C.border,borderRadius:12,padding:20},props.style||{})},props.children);
+}
+function TextArea(props){
+  var val=props.value,onChange=props.onChange,placeholder=props.placeholder,rows=props.rows||3,st=props.style||{};
+  return h("textarea",{value:val,onChange:function(e){onChange(e.target.value)},placeholder:placeholder,rows:rows,
+    style:Object.assign({width:"100%",padding:"10px 12px",border:"1px solid "+C.border,borderRadius:8,fontSize:13,lineHeight:1.6,outline:"none",background:C.bg,color:C.text,transition:"border 0.2s"},st),
+    onFocus:function(e){e.target.style.borderColor=C.accent},onBlur:function(e){e.target.style.borderColor=C.border}});
+}
+function Input(props){
+  var val=props.value,onChange=props.onChange,placeholder=props.placeholder,st=props.style||{};
+  return h("input",{value:val,onChange:function(e){onChange(e.target.value)},placeholder:placeholder,
+    style:Object.assign({width:"100%",padding:"8px 12px",border:"1px solid "+C.border,borderRadius:8,fontSize:13,outline:"none",background:C.bg,color:C.text},st),
+    onFocus:function(e){e.target.style.borderColor=C.accent},onBlur:function(e){e.target.style.borderColor=C.border}});
+}
+
+/* Agent Suggestion Chip */
+function AgentChip(props){
+  return h("div",{style:{padding:"10px 12px",background:C.indigoLight,borderRadius:8,border:"1px solid "+C.indigo+"20",marginTop:10}},
+    h("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:4}},
+      ico.bot(13,C.indigo),
+      h("span",{style:{fontSize:11,fontWeight:700,color:C.indigo}},props.agent),
+      h(Badge,{color:C.indigo,bg:C.indigo+"15",style:{marginLeft:"auto",fontSize:10}},"Suggestion")
+    ),
+    h("p",{style:{fontSize:12,color:C.text,margin:0,lineHeight:1.5}},props.message),
+    props.onApply?h("button",{onClick:props.onApply,style:{marginTop:6,padding:"3px 10px",background:C.indigo,color:"#fff",border:"none",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer"}},"Apply"):null
+  );
+}
+
+/* Prompt Block */
+function Prompt(props){
+  return h("div",{style:{display:"flex",gap:12,padding:"14px 16px",background:"linear-gradient(135deg,"+C.accent+"08,"+C.accent+"03)",borderRadius:10,border:"1px solid "+C.accent+"20",marginBottom:20}},
+    h("div",{style:{width:36,height:36,borderRadius:10,background:C.accent+"15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},
+      ico[props.icon]?ico[props.icon](18,C.accent):ico.lightbulb(18,C.accent)
+    ),
+    h("div",null,
+      h("p",{style:{fontSize:14,fontWeight:600,color:C.text,margin:0,lineHeight:1.4}},props.text),
+      props.sub?h("p",{style:{fontSize:12,color:C.textSec,margin:"4px 0 0",lineHeight:1.5}},props.sub):null
+    )
+  );
+}
+
+/* ====== STEP 1: DESIRED END STATE ====== */
+function Step1(props){
+  var data=props.data,setData=props.setData;
+  var d=data.endstate||{decision:"",conditions:["","",""],narrative:"",transformed:""};
+  var set=function(k,v){var o=Object.assign({},data);o.endstate=Object.assign({},d);o.endstate[k]=v;setData(o)};
+  var setCond=function(i,v){var c=d.conditions.slice();c[i]=v;set("conditions",c)};
+  var addCond=function(){set("conditions",d.conditions.concat([""]))};
+
+  return h("div",{style:{display:"flex",flexDirection:"column",gap:20}},
+    h(Prompt,{icon:"target",text:"Start at the end. What needs to be true when the work is done?",sub:"The best consulting work is reverse-engineered from the conditions it needs to create in the client's mind. Not from deliverables, not from tasks -- from decisions and understanding."}),
+
+    h(Card,null,
+      h("h3",{style:{fontSize:14,fontWeight:700,color:C.text,margin:"0 0 4px"}},"The Decision"),
+      h("p",{style:{fontSize:12,color:C.textSec,margin:"0 0 10px"}},"What specific decision does this body of work need to enable the client to make?"),
+      h(TextArea,{value:d.decision,onChange:function(v){set("decision",v)},placeholder:"e.g. The CMO needs to decide whether to fundamentally reorient the marketing investment model from brand awareness to performance-driven customer acquisition, with a clear investment case for the board.",rows:3}),
+      h(AgentChip,{agent:"Planning Strategist",message:"Consider framing the decision at the highest level of consequence. What's the decision that, once made, unlocks everything else? The board-level decision is often different from the marketing team's decision."})
+    ),
+
+    h(Card,null,
+      h("h3",{style:{fontSize:14,fontWeight:700,color:C.text,margin:"0 0 4px"}},"Conditions for Confidence"),
+      h("p",{style:{fontSize:12,color:C.textSec,margin:"0 0 12px"}},"What must be true in the client's mind for them to make that decision with conviction? Each condition becomes a design target for the work."),
+      h("div",{style:{display:"flex",flexDirection:"column",gap:10}},
+        d.conditions.map(function(c,i){
+          return h("div",{key:i,style:{display:"flex",alignItems:"flex-start",gap:10}},
+            h("div",{style:{width:28,height:28,borderRadius:8,background:C.accent+"12",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:4}},
+              h("span",{style:{fontSize:12,fontWeight:700,color:C.accent}},"C"+(i+1))
+            ),
+            h("div",{style:{flex:1}},
+              h(TextArea,{value:c,onChange:function(v){setCond(i,v)},placeholder:i===0?"e.g. Client has clarity on the true size and shape of the outcome gap -- the difference between current trajectory and ambition":i===1?"e.g. Client understands the root causes: why current marketing investment isn't converting to growth":i===2?"e.g. Client can articulate the cost of inaction and opportunity cost to their board with confidence":"Add another condition...",rows:2})
+            )
+          );
+        })
+      ),
+      h("button",{onClick:addCond,style:{marginTop:10,padding:"6px 14px",background:"transparent",border:"1px dashed "+C.accent,borderRadius:8,fontSize:12,fontWeight:600,color:C.accent,cursor:"pointer",display:"flex",alignItems:"center",gap:6}},ico.plus(14,C.accent)," Add condition")
+    ),
+
+    h(Card,null,
+      h("h3",{style:{fontSize:14,fontWeight:700,color:C.text,margin:"0 0 4px"}},"The Narrative They Need to Carry"),
+      h("p",{style:{fontSize:12,color:C.textSec,margin:"0 0 10px"}},"What story does the client need to be able to tell their board, their team, or themselves? This isn't our narrative -- it's theirs."),
+      h(TextArea,{value:d.narrative,onChange:function(v){set("narrative",v)},placeholder:"e.g. \"Our marketing investment has been optimised for the wrong outcomes. We now understand that the gap between our 2.1% growth and our 5.6% target is driven by three structural issues in how we connect brand investment to customer behaviour. Here is our evidence, and here is our recommended path forward.\"",rows:4})
+    ),
+
+    h(Card,null,
+      h("h3",{style:{fontSize:14,fontWeight:700,color:C.text,margin:"0 0 4px"}},"The Transformed State"),
+      h("p",{style:{fontSize:12,color:C.textSec,margin:"0 0 10px"}},"How should the client see their world differently after this work? What shifts in their mental model?"),
+      h(TextArea,{value:d.transformed,onChange:function(v){set("transformed",v)},placeholder:"e.g. They move from seeing marketing as a cost centre / brand function to seeing it as a precision growth engine with measurable cause-and-effect links to business outcomes. They understand exactly where the system is broken and have conviction about what to fix first.",rows:3}),
+      h(AgentChip,{agent:"Client Experience Architect",message:"The transformed state should be describable in one sentence that the CMO could say in a board meeting. If it takes a paragraph, it's not clear enough yet."})
+    )
+  );
+}
+
+/* ====== STEP 2: CLIENT CONTEXT ====== */
+function Step2(props){
+  var data=props.data,setData=props.setData;
+  var d=data.context||{decisionStyle:"",stakeholders:[{name:"",role:"",needs:"",stance:""}],politics:"",dataLandscape:"",absorption:"",rhythm:""};
+  var set=function(k,v){var o=Object.assign({},data);o.context=Object.assign({},d);o.context[k]=v;setData(o)};
+  var setSH=function(i,k,v){var s=d.stakeholders.slice();s[i]=Object.assign({},s[i]);s[i][k]=v;set("stakeholders",s)};
+  var addSH=function(){set("stakeholders",d.stakeholders.concat([{name:"",role:"",needs:"",stance:""}]))};
+
+  return h("div",{style:{display:"flex",flexDirection:"column",gap:20}},
+    h(Prompt,{icon:"compass",text:"Design for the client's context, not just the content.",sub:"The same analysis lands completely differently depending on who's receiving it, how they make decisions, what's politically sensitive, and how much change they can absorb. Context is not a nice-to-have -- it's a design constraint."}),
+
+    h(Card,null,
+      h("h3",{style:{fontSize:14,fontWeight:700,color:C.text,margin:"0 0 4px"}},"Decision-Making Style"),
+      h("p",{style:{fontSize:12,color:C.textSec,margin:"0 0 10px"}},"How does this client make decisions? What's their appetite for data vs. intuition? Do they decide in rooms or corridors?"),
+      h(TextArea,{value:d.decisionStyle,onChange:function(v){set("decisionStyle",v)},placeholder:"e.g. The CMO is data-driven but ultimately persuaded by narrative. Decisions are socialised informally before formal board meetings. The CFO needs to see financial rigour; the CEO responds to customer stories.",rows:3})
+    ),
+
+    h(Card,null,
+      h("h3",{style:{fontSize:14,fontWeight:700,color:C.text,margin:"0 0 4px"}},"Key Stakeholders"),
+      h("p",{style:{fontSize:12,color:C.textSec,margin:"0 0 12px"}},"Who needs to be convinced? Who can block? Who can champion? Understanding the human system is as important as the analytical work."),
+      h("div",{style:{display:"flex",flexDirection:"column",gap:12}},
+        d.stakeholders.map(function(s,i){
+          return h("div",{key:i,style:{padding:14,background:C.bg,borderRadius:10,border:"1px solid "+C.borderLight}},
+            h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}},
+              h(Input,{value:s.name,onChange:function(v){setSH(i,"name",v)},placeholder:"Name / Title"}),
+              h(Input,{value:s.role,onChange:function(v){setSH(i,"role",v)},placeholder:"Role in decision"})
+            ),
+            h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+              h(Input,{value:s.needs,onChange:function(v){setSH(i,"needs",v)},placeholder:"What they need to see / hear"}),
+              h("select",{value:s.stance,onChange:function(e){setSH(i,"stance",e.target.value)},style:{padding:"8px 12px",border:"1px solid "+C.border,borderRadius:8,fontSize:13,background:C.bg,color:s.stance?C.text:C.textMut}},
+                h("option",{value:""},"Stance..."),
+                h("option",{value:"champion"},"Champion"),
+                h("option",{value:"supportive"},"Supportive"),
+                h("option",{value:"neutral"},"Neutral"),
+                h("option",{value:"sceptical"},"Sceptical"),
+                h("option",{value:"blocker"},"Potential Blocker")
+              )
+            )
+          );
+        })
+      ),
+      h("button",{onClick:addSH,style:{marginTop:10,padding:"6px 14px",background:"transparent",border:"1px dashed "+C.teal,borderRadius:8,fontSize:12,fontWeight:600,color:C.teal,cursor:"pointer",display:"flex",alignItems:"center",gap:6}},ico.plus(14,C.teal)," Add stakeholder")
+    ),
+
+    h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}},
+      h(Card,null,
+        h("h3",{style:{fontSize:14,fontWeight:700,color:C.text,margin:"0 0 4px"}},"Political Landscape"),
+        h("p",{style:{fontSize:12,color:C.textSec,margin:"0 0 10px"}},"What's sensitive? What's been tried before? Any sacred cows?"),
+        h(TextArea,{value:d.politics,onChange:function(v){set("politics",v)},placeholder:"e.g. Previous agency overpromised on digital transformation. The brand team feels threatened by performance marketing narratives. The CEO hired the current CMO specifically for brand building.",rows:4})
+      ),
+      h(Card,null,
+        h("h3",{style:{fontSize:14,fontWeight:700,color:C.text,margin:"0 0 4px"}},"Data Landscape"),
+        h("p",{style:{fontSize:12,color:C.textSec,margin:"0 0 10px"}},"What data exists? What's accessible? What's reliable? Where are the gaps?"),
+        h(TextArea,{value:d.dataLandscape,onChange:function(v){set("dataLandscape",v)},placeholder:"e.g. Strong econometric data from media agency. Brand tracker is quarterly and 6 months old. No unified customer data -- siloed across CRM and media. Sales data is granular but not linked to marketing activity.",rows:4})
+      )
+    ),
+
+    h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}},
+      h(Card,null,
+        h("h3",{style:{fontSize:14,fontWeight:700,color:C.text,margin:"0 0 4px"}},"Absorption Capacity"),
+        h("p",{style:{fontSize:12,color:C.textSec,margin:"0 0 10px"}},"How much change can they take? What's their bandwidth alongside BAU?"),
+        h(TextArea,{value:d.absorption,onChange:function(v){set("absorption",v)},placeholder:"e.g. Marketing team is running at 120% on BAU. Can dedicate CMO + Head of Marketing for fortnightly sessions. Need to be careful not to overwhelm with volume of analysis -- synthesis is key.",rows:3})
+      ),
+      h(Card,null,
+        h("h3",{style:{fontSize:14,fontWeight:700,color:C.text,margin:"0 0 4px"}},"Client Rhythm"),
+        h("p",{style:{fontSize:12,color:C.textSec,margin:"0 0 10px"}},"When do they make decisions? Quarterly board cycles? Weekly leadership meetings?"),
+        h(TextArea,{value:d.rhythm,onChange:function(v){set("rhythm",v)},placeholder:"e.g. Board meets quarterly (next: April 15). CMO has weekly leadership meeting on Mondays. Budget cycle starts June. Key window: present to board in April for budget approval in June.",rows:3}),
+        h(AgentChip,{agent:"Planning Strategist",message:"The April board meeting creates a hard deadline. Work backwards from there: final deliverables needed 2 weeks before (April 1), which means Strategic Liberation must complete by mid-March."})
+      )
+    )
+  );
+}
+
+/* ====== STEP 3: CONDITIONS OF SUCCESS ====== */
+function Step3(props){
+  var data=props.data,setData=props.setData;
+  var conditions=(data.endstate||{}).conditions||[];
+  var d=data.conditions||conditions.map(function(){return{evidence:"",good:"",exceptional:"",experience:"",qa:""}});
+  var set=function(i,k,v){var arr=d.slice();arr[i]=Object.assign({},arr[i]);arr[i][k]=v;var o=Object.assign({},data);o.conditions=arr;setData(o)};
+  var filtered=conditions.filter(function(c){return c.trim()});
+
+  return h("div",{style:{display:"flex",flexDirection:"column",gap:20}},
+    h(Prompt,{icon:"check",text:"Define what 'good' looks like -- and it's not about polish.",sub:"Quality in consulting isn't about beautiful slides. It's about whether the work does its job. Did the analysis change understanding? Did the narrative create conviction? Define 'good' in terms of impact on the client, not aesthetics of the output."}),
+
+    filtered.length===0?
+      h(Card,{style:{textAlign:"center",padding:40}},
+        h("p",{style:{fontSize:14,color:C.textSec}},"Return to Step 1 and define the conditions for confidence. Each condition you define will appear here for you to specify what 'good' looks like.")
+      )
+    :
+      filtered.map(function(cond,i){
+        return h(Card,{key:i,style:{borderLeft:"3px solid "+C.green}},
+          h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:14}},
+            h("div",{style:{width:28,height:28,borderRadius:8,background:C.accent+"12",display:"flex",alignItems:"center",justifyContent:"center"}},
+              h("span",{style:{fontSize:12,fontWeight:700,color:C.accent}},"C"+(i+1))
+            ),
+            h("p",{style:{fontSize:14,fontWeight:700,color:C.text,margin:0,flex:1}},cond)
+          ),
+          h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}},
+            h("div",null,
+              h("label",{style:{fontSize:11,fontWeight:600,color:C.textMut,textTransform:"uppercase",letterSpacing:0.5,display:"block",marginBottom:4}},"Evidence Required"),
+              h(TextArea,{value:(d[i]||{}).evidence||"",onChange:function(v){set(i,"evidence",v)},placeholder:"What data, analysis, or insight would satisfy this condition?",rows:2})
+            ),
+            h("div",null,
+              h("label",{style:{fontSize:11,fontWeight:600,color:C.textMut,textTransform:"uppercase",letterSpacing:0.5,display:"block",marginBottom:4}},"Client Experience"),
+              h(TextArea,{value:(d[i]||{}).experience||"",onChange:function(v){set(i,"experience",v)},placeholder:"How will the client experience this condition being met?",rows:2})
+            )
+          ),
+          h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginTop:12}},
+            h("div",null,
+              h("label",{style:{fontSize:11,fontWeight:600,color:C.green,textTransform:"uppercase",letterSpacing:0.5,display:"block",marginBottom:4}},"Good Enough"),
+              h(TextArea,{value:(d[i]||{}).good||"",onChange:function(v){set(i,"good",v)},placeholder:"What's the minimum bar? What would be acceptable?",rows:2})
+            ),
+            h("div",null,
+              h("label",{style:{fontSize:11,fontWeight:600,color:C.accent,textTransform:"uppercase",letterSpacing:0.5,display:"block",marginBottom:4}},"Exceptional"),
+              h(TextArea,{value:(d[i]||{}).exceptional||"",onChange:function(v){set(i,"exceptional",v)},placeholder:"What would make this revelatory? What would change how they see their business?",rows:2})
+            )
+          ),
+          h("div",{style:{marginTop:12}},
+            h("label",{style:{fontSize:11,fontWeight:600,color:C.textMut,textTransform:"uppercase",letterSpacing:0.5,display:"block",marginBottom:4}},"QA Criteria"),
+            h(TextArea,{value:(d[i]||{}).qa||"",onChange:function(v){set(i,"qa",v)},placeholder:"How do we verify this condition is met before presenting to the client?",rows:2})
+          )
+        );
+      })
+  );
+}
+
+/* ====== STEP 4: LINES OF INQUIRY ====== */
+function Step4(props){
+  var data=props.data,setData=props.setData;
+  var d=data.inquiry||[{hypothesis:"",forEvidence:"",againstEvidence:"",priority:"high",condition:"",sequence:1}];
+  var set=function(i,k,v){var arr=d.slice();arr[i]=Object.assign({},arr[i]);arr[i][k]=v;var o=Object.assign({},data);o.inquiry=arr;setData(o)};
+  var add=function(){var o=Object.assign({},data);o.inquiry=d.concat([{hypothesis:"",forEvidence:"",againstEvidence:"",priority:"medium",condition:"",sequence:d.length+1}]);setData(o)};
+  var conditions=((data.endstate||{}).conditions||[]).filter(function(c){return c.trim()});
+
+  return h("div",{style:{display:"flex",flexDirection:"column",gap:20}},
+    h(Prompt,{icon:"search",text:"State what you believe. Then design inquiry to test it -- not confirm it.",sub:"Hypothesis-driven analysis prevents the common mistake of 'looking at mud'. Start with explicit beliefs about the business, then design rigorous inquiry to validate or invalidate them. The intellectual honesty to state your beliefs upfront is what separates strategy from research."}),
+
+    d.map(function(item,i){
+      return h(Card,{key:i,style:{borderLeft:"3px solid "+C.indigo}},
+        h("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:12}},
+          h("div",{style:{width:28,height:28,borderRadius:8,background:C.indigo+"12",display:"flex",alignItems:"center",justifyContent:"center"}},
+            h("span",{style:{fontSize:12,fontWeight:700,color:C.indigo}},"H"+(i+1))
+          ),
+          h("div",{style:{flex:1}},
+            h("label",{style:{fontSize:11,fontWeight:600,color:C.textMut,textTransform:"uppercase",letterSpacing:0.5}},"Hypothesis")
+          ),
+          h("div",{style:{display:"flex",gap:6}},
+            h("select",{value:item.priority,onChange:function(e){set(i,"priority",e.target.value)},style:{padding:"4px 8px",border:"1px solid "+C.border,borderRadius:6,fontSize:11,background:C.bg,fontWeight:600,color:item.priority==="high"?C.red:item.priority==="medium"?C.amber:C.textSec}},
+              h("option",{value:"high"},"High Priority"),
+              h("option",{value:"medium"},"Medium"),
+              h("option",{value:"low"},"Lower")
+            ),
+            conditions.length>0?h("select",{value:item.condition,onChange:function(e){set(i,"condition",e.target.value)},style:{padding:"4px 8px",border:"1px solid "+C.border,borderRadius:6,fontSize:11,background:C.bg,color:item.condition?C.text:C.textMut,maxWidth:180}},
+              h("option",{value:""},"Link to condition..."),
+              conditions.map(function(c,j){return h("option",{key:j,value:"C"+(j+1)},"C"+(j+1)+": "+c.substring(0,50)+"...")})
+            ):null
+          )
+        ),
+        h(TextArea,{value:item.hypothesis,onChange:function(v){set(i,"hypothesis",v)},placeholder:"e.g. \"We believe that the disconnect between brand investment and growth is driven by a measurement gap -- the current attribution model doesn't capture the full path from brand exposure to customer acquisition.\"",rows:2}),
+        h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginTop:12}},
+          h("div",null,
+            h("label",{style:{fontSize:11,fontWeight:600,color:C.green,textTransform:"uppercase",letterSpacing:0.5,display:"block",marginBottom:4}},"Evidence that would support this"),
+            h(TextArea,{value:item.forEvidence,onChange:function(v){set(i,"forEvidence",v)},placeholder:"What data or findings would strengthen this hypothesis?",rows:2})
+          ),
+          h("div",null,
+            h("label",{style:{fontSize:11,fontWeight:600,color:C.red,textTransform:"uppercase",letterSpacing:0.5,display:"block",marginBottom:4}},"Evidence that would challenge this"),
+            h(TextArea,{value:item.againstEvidence,onChange:function(v){set(i,"againstEvidence",v)},placeholder:"What would make us abandon this hypothesis? What would change our mind?",rows:2})
+          )
+        ),
+        i===0?h(AgentChip,{agent:"Inquiry Agent",message:"Strong hypothesis. Consider adding a second hypothesis that the gap isn't measurement but positioning -- that brand investment is reaching the wrong audience segments. Testing both competing hypotheses will produce a more rigorous outcome."}):null
+      );
+    }),
+
+    h("button",{onClick:add,style:{padding:"10px 16px",background:"transparent",border:"1px dashed "+C.indigo,borderRadius:10,fontSize:13,fontWeight:600,color:C.indigo,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}},ico.plus(16,C.indigo)," Add line of inquiry")
+  );
+}
+
+/* ====== STEP 5: PATTERN DESIGN ====== */
+function Step5(props){
+  var data=props.data,setData=props.setData;
+  var d=data.patterns||[{name:"",intention:"",inputs:"",transformation:"",outputs:"",outcome:"",hours:16,skills:[],quality:"",success:"",agentSupport:"",dependencies:"",expanded:true}];
+  var set=function(i,k,v){var arr=d.slice();arr[i]=Object.assign({},arr[i]);arr[i][k]=v;var o=Object.assign({},data);o.patterns=arr;setData(o)};
+  var add=function(){var o=Object.assign({},data);o.patterns=d.concat([{name:"",intention:"",inputs:"",transformation:"",outputs:"",outcome:"",hours:16,skills:[],quality:"",success:"",agentSupport:"",dependencies:"",expanded:true}]);setData(o)};
+  var toggle=function(i){set(i,"expanded",!d[i].expanded)};
+
+  return h("div",{style:{display:"flex",flexDirection:"column",gap:20}},
+    h(Prompt,{icon:"boxes",text:"Design the smallest meaningful unit of work. Each pattern is 8-80 hours with clear inputs, a transformation, and outputs that advance a condition.",sub:"Patterns are the atomic unit of the Elevate operating model. Every pattern must have an intention (why it exists), a clear transformation (what happens to inputs), and outputs that directly advance one of your conditions of success. If you can't link a pattern to a condition, question whether it's needed."}),
+
+    d.map(function(p,i){
+      return h(Card,{key:i,style:{borderLeft:"3px solid "+C.purple,padding:0,overflow:"hidden"}},
+        h("div",{onClick:function(){toggle(i)},style:{padding:"14px 20px",display:"flex",alignItems:"center",gap:12,cursor:"pointer",background:p.expanded?"transparent":C.bg}},
+          h("div",{style:{width:32,height:32,borderRadius:8,background:C.purple+"12",display:"flex",alignItems:"center",justifyContent:"center"}},
+            h("span",{style:{fontSize:13,fontWeight:700,color:C.purple}},"P"+(i+1))
+          ),
+          h("div",{style:{flex:1}},
+            h(Input,{value:p.name,onChange:function(v){set(i,"name",v)},placeholder:"Pattern "+(i+1)+" name -- e.g. Market Opportunity Sizing",style:{border:"none",background:"transparent",padding:0,fontSize:15,fontWeight:700}})
+          ),
+          h("div",{style:{display:"flex",alignItems:"center",gap:8}},
+            h("div",{style:{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",background:C.bg,borderRadius:6}},
+              h("span",{style:{fontSize:12,fontWeight:700,color:C.purple}},p.hours+"h")
+            ),
+            p.expanded?ico.chevU(16,C.textMut):ico.chevD(16,C.textMut)
+          )
+        ),
+        p.expanded?h("div",{style:{padding:"0 20px 20px"}},
+          h("div",{style:{marginBottom:14}},
+            h("label",{style:{fontSize:11,fontWeight:600,color:C.accent,textTransform:"uppercase",letterSpacing:0.5,display:"block",marginBottom:4}},"Intention -- Why does this work exist?"),
+            h(TextArea,{value:p.intention,onChange:function(v){set(i,"intention",v)},placeholder:"e.g. To quantify the gap between current growth trajectory and stated ambition, creating undeniable clarity on the scale of the problem.",rows:2})
+          ),
+          h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:14}},
+            h("div",{style:{padding:14,background:C.tealLight,borderRadius:10}},
+              h("label",{style:{fontSize:11,fontWeight:700,color:C.teal,textTransform:"uppercase",letterSpacing:0.5,display:"block",marginBottom:6}},"Inputs"),
+              h(TextArea,{value:p.inputs,onChange:function(v){set(i,"inputs",v)},placeholder:"Data sources, client materials, access needed...",rows:3,style:{background:"#fff",border:"1px solid "+C.teal+"30"}})
+            ),
+            h("div",{style:{padding:14,background:C.indigoLight,borderRadius:10}},
+              h("label",{style:{fontSize:11,fontWeight:700,color:C.indigo,textTransform:"uppercase",letterSpacing:0.5,display:"block",marginBottom:6}},"Transformation"),
+              h(TextArea,{value:p.transformation,onChange:function(v){set(i,"transformation",v)},placeholder:"Analysis, synthesis, modelling that happens...",rows:3,style:{background:"#fff",border:"1px solid "+C.indigo+"30"}})
+            ),
+            h("div",{style:{padding:14,background:C.purpleLight,borderRadius:10}},
+              h("label",{style:{fontSize:11,fontWeight:700,color:C.purple,textTransform:"uppercase",letterSpacing:0.5,display:"block",marginBottom:6}},"Outputs"),
+              h(TextArea,{value:p.outputs,onChange:function(v){set(i,"outputs",v)},placeholder:"Tangible deliverables and artifacts produced...",rows:3,style:{background:"#fff",border:"1px solid "+C.purple+"30"}})
+            )
+          ),
+          h("div",{style:{display:"grid",gridTemplateColumns:"2fr 1fr",gap:12,marginBottom:14}},
+            h("div",null,
+              h("label",{style:{fontSize:11,fontWeight:600,color:C.textMut,textTransform:"uppercase",letterSpacing:0.5,display:"block",marginBottom:4}},"Outcome -- What condition does this advance?"),
+              h(TextArea,{value:p.outcome,onChange:function(v){set(i,"outcome",v)},placeholder:"Which condition of success (C1, C2...) does this pattern directly advance?",rows:2})
+            ),
+            h("div",null,
+              h("label",{style:{fontSize:11,fontWeight:600,color:C.textMut,textTransform:"uppercase",letterSpacing:0.5,display:"block",marginBottom:4}},"Estimated Effort (8-80 hrs)"),
+              h("div",{style:{display:"flex",alignItems:"center",gap:10}},
+                h("input",{type:"range",min:8,max:80,step:4,value:p.hours,onChange:function(e){set(i,"hours",parseInt(e.target.value))},style:{flex:1,accentColor:C.purple}}),
+                h("span",{style:{fontSize:18,fontWeight:700,color:C.purple,minWidth:50,textAlign:"right"}},p.hours+"h")
+              ),
+              h("div",{style:{display:"flex",justifyContent:"space-between",marginTop:4}},
+                h("span",{style:{fontSize:10,color:C.textMut}},"8h"),
+                h("span",{style:{fontSize:10,color:C.textMut}},"80h")
+              )
+            )
+          ),
+          h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}},
+            h("div",null,
+              h("label",{style:{fontSize:11,fontWeight:600,color:C.textMut,textTransform:"uppercase",letterSpacing:0.5,display:"block",marginBottom:4}},"Quality Standards / Definition of Done"),
+              h(TextArea,{value:p.quality,onChange:function(v){set(i,"quality",v)},placeholder:"What must be true for this pattern to be considered complete?",rows:2})
+            ),
+            h("div",null,
+              h("label",{style:{fontSize:11,fontWeight:600,color:C.textMut,textTransform:"uppercase",letterSpacing:0.5,display:"block",marginBottom:4}},"Success Criteria"),
+              h(TextArea,{value:p.success,onChange:function(v){set(i,"success",v)},placeholder:"How will we know this pattern achieved what it needed to?",rows:2})
+            )
+          ),
+          h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}},
+            h("div",{style:{padding:12,background:C.indigoLight,borderRadius:8}},
+              h("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:6}},ico.bot(14,C.indigo),h("label",{style:{fontSize:11,fontWeight:700,color:C.indigo,textTransform:"uppercase",letterSpacing:0.5}},"Agent Support Opportunities")),
+              h(TextArea,{value:p.agentSupport,onChange:function(v){set(i,"agentSupport",v)},placeholder:"Where can AI accelerate or augment? Data extraction, synthesis, initial modelling...",rows:2,style:{background:"#fff"}})
+            ),
+            h("div",null,
+              h("label",{style:{fontSize:11,fontWeight:600,color:C.textMut,textTransform:"uppercase",letterSpacing:0.5,display:"block",marginBottom:4}},"Dependencies"),
+              h(TextArea,{value:p.dependencies,onChange:function(v){set(i,"dependencies",v)},placeholder:"What must come before this? What does this unlock?",rows:2})
+            )
+          )
+        ):null
+      );
+    }),
+
+    h("button",{onClick:add,style:{padding:"12px 16px",background:"transparent",border:"1px dashed "+C.purple,borderRadius:10,fontSize:13,fontWeight:600,color:C.purple,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}},ico.plus(16,C.purple)," Add pattern")
+  );
+}
+
+/* ====== STEP 6: ALLOCATION & SEQUENCING ====== */
+function Step6(props){
+  var data=props.data,setData=props.setData;
+  var patterns=(data.patterns||[]).filter(function(p){return p.name.trim()});
+  var d=data.allocation||patterns.map(function(){return{assignee:"",week:""}});
+  var set=function(i,k,v){var arr=d.slice();arr[i]=Object.assign({},arr[i]||{});arr[i][k]=v;var o=Object.assign({},data);o.allocation=arr;setData(o)};
+
+  var allocMap={};
+  d.forEach(function(a,i){
+    if(a.assignee && patterns[i]){
+      allocMap[a.assignee]=(allocMap[a.assignee]||0)+patterns[i].hours;
+    }
+  });
+
+  return h("div",{style:{display:"flex",flexDirection:"column",gap:20}},
+    h(Prompt,{icon:"calendar",text:"Map work to people, and check whether they can actually do it.",sub:"Capacity planning isn't just math -- it's care. The 85% cap exists to protect quality, rituals, and people's wellbeing. Every pattern assigned is a commitment to someone's time. Make it intentional."}),
+
+    h(Card,null,
+      h("h3",{style:{fontSize:14,fontWeight:700,color:C.text,margin:"0 0 14px"}},"Squad Capacity"),
+      h("div",{style:{display:"grid",gridTemplateColumns:"repeat("+SQUAD.length+",1fr)",gap:12}},
+        SQUAD.map(function(m){
+          var newHrs=allocMap[m.i]||0;
+          var newPct=Math.round(newHrs/40*100);
+          var totalPct=m.alloc+Math.round(newPct*0.3);
+          var over=totalPct>m.cap;
+          return h("div",{key:m.i,style:{padding:14,background:over?C.redLight:C.bg,borderRadius:10,border:"1px solid "+(over?C.red+"30":C.borderLight)}},
+            h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:10}},
+              h(Avatar,{initials:m.i,color:m.color,size:32}),
+              h("div",null,
+                h("p",{style:{fontSize:13,fontWeight:700,color:C.text,margin:0}},m.name),
+                h("p",{style:{fontSize:11,color:C.textSec,margin:0}},m.role)
+              )
+            ),
+            h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:4}},
+              h("span",{style:{fontSize:11,color:C.textSec}},"Current + New"),
+              h("span",{style:{fontSize:12,fontWeight:700,color:over?C.red:C.text}},totalPct+"% / "+m.cap+"%")
+            ),
+            h("div",{style:{height:8,background:C.borderLight,borderRadius:8,overflow:"hidden",position:"relative"}},
+              h("div",{style:{position:"absolute",left:0,top:0,height:"100%",width:m.cap+"%",background:C.border,borderRadius:8}}),
+              h("div",{style:{position:"absolute",left:0,top:0,height:"100%",width:m.alloc+"%",background:m.color,borderRadius:8}}),
+              h("div",{style:{position:"absolute",left:m.alloc+"%",top:0,height:"100%",width:Math.round(newPct*0.3)+"%",background:over?C.red:m.color+"80",borderRadius:"0 8px 8px 0"}})
+            ),
+            over?h("p",{style:{fontSize:11,color:C.red,margin:"4px 0 0",fontWeight:600}},"Over 85% cap -- redistribute"):null,
+            h("p",{style:{fontSize:11,color:C.textMut,margin:"4px 0 0"}},"New: "+newHrs+"h from "+d.filter(function(a,j){return a.assignee===m.i&&patterns[j]}).length+" pattern(s)"),
+            h("div",{style:{display:"flex",flexWrap:"wrap",gap:3,marginTop:6}},
+              m.skills.map(function(s,j){return h(Badge,{key:j,color:C.textSec,bg:C.surface,style:{fontSize:10}},s)})
+            )
+          );
+        })
+      )
+    ),
+
+    h(Card,null,
+      h("h3",{style:{fontSize:14,fontWeight:700,color:C.text,margin:"0 0 14px"}},"Assign & Sequence Patterns"),
+      patterns.length===0?
+        h("p",{style:{color:C.textSec,fontSize:13,textAlign:"center",padding:20}},"Return to Step 5 to design your patterns. They'll appear here for assignment.")
+      :
+        h("div",{style:{display:"flex",flexDirection:"column",gap:8}},
+          patterns.map(function(p,i){
+            return h("div",{key:i,style:{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:C.bg,borderRadius:10,border:"1px solid "+C.borderLight}},
+              h("div",{style:{width:28,height:28,borderRadius:8,background:C.purple+"12",display:"flex",alignItems:"center",justifyContent:"center"}},
+                h("span",{style:{fontSize:11,fontWeight:700,color:C.purple}},"P"+(i+1))
+              ),
+              h("div",{style:{flex:1,minWidth:0}},
+                h("p",{style:{fontSize:13,fontWeight:600,color:C.text,margin:0}},p.name),
+                h("p",{style:{fontSize:11,color:C.textSec,margin:0}},p.hours+"h \u00B7 "+(p.outcome||"No condition linked"))
+              ),
+              h("select",{value:(d[i]||{}).assignee||"",onChange:function(e){set(i,"assignee",e.target.value)},style:{padding:"6px 10px",border:"1px solid "+C.border,borderRadius:8,fontSize:12,background:C.surface,minWidth:140}},
+                h("option",{value:""},"Assign to..."),
+                SQUAD.map(function(m){return h("option",{key:m.i,value:m.i},m.name+" ("+m.i+")")})
+              ),
+              h("select",{value:(d[i]||{}).week||"",onChange:function(e){set(i,"week",e.target.value)},style:{padding:"6px 10px",border:"1px solid "+C.border,borderRadius:8,fontSize:12,background:C.surface,minWidth:100}},
+                h("option",{value:""},"Week..."),
+                Array.from({length:12},function(_,k){return k+1}).map(function(w){return h("option",{key:w,value:"W"+w},"Week "+w)})
+              )
+            );
+          })
+        )
+    ),
+
+    h(Card,{style:{background:"linear-gradient(135deg,"+C.accent+"08,"+C.accent+"03)",border:"1px solid "+C.accent+"25"}},
+      h("h3",{style:{fontSize:14,fontWeight:700,color:C.accentDark,margin:"0 0 10px"}},"Work Design Summary"),
+      h("div",{style:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}},
+        h("div",{style:{textAlign:"center"}},h("p",{style:{fontSize:28,fontWeight:800,color:C.accent,margin:0}},patterns.length),h("p",{style:{fontSize:12,color:C.textSec,margin:0}},"Patterns")),
+        h("div",{style:{textAlign:"center"}},h("p",{style:{fontSize:28,fontWeight:800,color:C.purple,margin:0}},patterns.reduce(function(a,b){return a+b.hours},0)+"h"),h("p",{style:{fontSize:12,color:C.textSec,margin:0}},"Total Effort")),
+        h("div",{style:{textAlign:"center"}},h("p",{style:{fontSize:28,fontWeight:800,color:C.teal,margin:0}},new Set(d.filter(function(a){return a.assignee}).map(function(a){return a.assignee})).size),h("p",{style:{fontSize:12,color:C.textSec,margin:0}},"People")),
+        h("div",{style:{textAlign:"center"}},h("p",{style:{fontSize:28,fontWeight:800,color:C.indigo,margin:0}},((data.endstate||{}).conditions||[]).filter(function(c){return c.trim()}).length),h("p",{style:{fontSize:12,color:C.textSec,margin:0}},"Conditions"))
+      )
+    )
+  );
+}
+
+/* ====== MAIN APP ====== */
+function App(){
+  var stepState=useState(1),step=stepState[0],setStep=stepState[1];
+  var dataState=useState({}),data=dataState[0],setData=dataState[1];
+  var scrollRef=useRef(null);
+  useEffect(function(){if(scrollRef.current)scrollRef.current.scrollTop=0},[step]);
+
+  var currentStep=STEPS[step-1];
+  var StepComponents=[null,Step1,Step2,Step3,Step4,Step5,Step6];
+  var StepComponent=StepComponents[step];
+
+  return h("div",{style:{width:"100vw",height:"100vh",display:"flex",flexDirection:"column",background:C.bg,overflow:"hidden"}},
+    /* Top Bar */
+    h("div",{style:{height:52,background:C.navy,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 20px",flexShrink:0}},
+      h("div",{style:{display:"flex",alignItems:"center",gap:16}},
+        h("div",{style:{display:"flex",alignItems:"center",gap:10}},
+          h("div",{style:{width:28,height:28,borderRadius:6,background:"linear-gradient(135deg,"+C.accent+","+C.accentDark+")",display:"flex",alignItems:"center",justifyContent:"center"}},ico.layers(16,"#fff")),
+          h("span",{style:{fontSize:15,fontWeight:800,color:"#fff",letterSpacing:-0.3}},"Commons OS")
+        ),
+        h("div",{style:{width:1,height:20,background:"#ffffff15"}}),
+        h("span",{style:{fontSize:13,fontWeight:600,color:C.accent}},"Work Design Studio"),
+        h(Badge,{color:"#ffffff90",bg:"#ffffff12"},"Commons")
+      ),
+      h("div",{style:{display:"flex",alignItems:"center",gap:8}},
+        h(Avatar,{initials:"SC",color:C.accent,size:28}),
+        h("span",{style:{fontSize:12,color:"#ffffffb0",fontWeight:500}},"Sarah Chen")
+      )
+    ),
+
+    h("div",{style:{flex:1,display:"flex",overflow:"hidden"}},
+      /* Left: Step Navigation */
+      h("div",{style:{width:280,flexShrink:0,background:C.surface,borderRight:"1px solid "+C.border,display:"flex",flexDirection:"column"}},
+        h("div",{style:{padding:"16px 16px 10px"}},
+          h("p",{style:{fontSize:11,fontWeight:700,color:C.textMut,textTransform:"uppercase",letterSpacing:1,margin:0}},"Work Design Flow")
+        ),
+        h("div",{style:{flex:1,padding:"0 12px",display:"flex",flexDirection:"column",gap:2}},
+          STEPS.map(function(s){
+            var isActive=step===s.id;
+            var isComplete=step>s.id;
+            return h("button",{key:s.id,onClick:function(){setStep(s.id)},style:{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:isActive?s.color+"10":"transparent",border:isActive?"1px solid "+s.color+"25":"1px solid transparent",borderRadius:10,cursor:"pointer",width:"100%",textAlign:"left",transition:"all 0.15s"}},
+              h("div",{style:{width:32,height:32,borderRadius:8,background:isComplete?C.green+"15":isActive?s.color+"15":C.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},
+                isComplete?ico.check(16,C.green):ico[s.icon](16,isActive?s.color:C.textMut)
+              ),
+              h("div",{style:{flex:1,minWidth:0}},
+                h("p",{style:{fontSize:13,fontWeight:isActive?700:500,color:isActive?s.color:isComplete?C.green:C.text,margin:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},s.title),
+                h("p",{style:{fontSize:11,color:C.textSec,margin:0}},s.subtitle)
+              )
+            );
+          })
+        ),
+        /* Principle */
+        h("div",{style:{padding:16,borderTop:"1px solid "+C.border}},
+          h("div",{style:{padding:12,background:"linear-gradient(135deg,"+currentStep.color+"08,"+currentStep.color+"03)",borderRadius:10,border:"1px solid "+currentStep.color+"20"}},
+            h("p",{style:{fontSize:10,fontWeight:700,color:currentStep.color,textTransform:"uppercase",letterSpacing:0.5,margin:"0 0 4px"}},"Elevate Principle"),
+            h("p",{style:{fontSize:13,fontWeight:700,color:C.text,margin:"0 0 2px"}},currentStep.principle),
+            h("p",{style:{fontSize:11,color:C.textSec,margin:0,fontStyle:"italic"}},currentStep.principleDesc)
+          )
+        )
+      ),
+
+      /* Centre: Main Content */
+      h("div",{ref:scrollRef,style:{flex:1,overflowY:"auto",padding:"24px 32px"}},
+        h("div",{style:{marginBottom:24}},
+          h("div",{style:{display:"flex",alignItems:"center",gap:4,marginBottom:8}},
+            h(Badge,{color:currentStep.color,bg:currentStep.color+"12"},"Step "+step+" of 6"),
+            h(Badge,{color:C.textSec,bg:C.borderLight},currentStep.subtitle)
+          ),
+          h("h1",{style:{fontSize:24,fontWeight:800,color:C.text,margin:"0 0 4px"}},currentStep.title),
+          h("p",{style:{fontSize:14,color:C.textSec,margin:0}},currentStep.question)
+        ),
+
+        h(StepComponent,{data:data,setData:setData}),
+
+        h("div",{style:{display:"flex",justifyContent:"space-between",marginTop:32,paddingTop:20,borderTop:"1px solid "+C.border}},
+          h("button",{onClick:function(){setStep(Math.max(1,step-1))},disabled:step===1,style:{padding:"10px 20px",background:step===1?"transparent":C.surface,border:"1px solid "+(step===1?"transparent":C.border),borderRadius:10,fontSize:13,fontWeight:600,color:step===1?C.textMut:C.text,cursor:step===1?"default":"pointer",display:"flex",alignItems:"center",gap:8}},
+            ico.arrowL(16,step===1?C.textMut:C.text)," Previous"
+          ),
+          h("button",{onClick:function(){setStep(Math.min(6,step+1))},disabled:step===6,style:{padding:"10px 24px",background:step===6?C.green:C.navy,border:"none",borderRadius:10,fontSize:13,fontWeight:700,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:8,boxShadow:"0 2px 8px "+(step===6?C.green:C.navy)+"30"}},
+            step===6?"Complete Work Design":"Continue",step<6?" ":null,step<6?ico.arrowR(16,"#fff"):null
+          )
+        )
+      )
+    )
+  );
+}
+
+ReactDOM.render(h(App),document.getElementById("root"));
+</script>
+</body>
+</html>
